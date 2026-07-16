@@ -138,42 +138,52 @@ In sequential state, shows the accumulated key sequence."
 (defmacro nas-define-dispatch (name prompt &rest bindings)
   "Define NAME as an interactive command that reads one key and dispatches.
 PROMPT is shown in the echo area while waiting for input.
-BINDINGS are `pcase' clauses.  Unless BINDINGS already supplies a `_'
-clause, an unmatched key is re-queued unread by default."
+BINDINGS are `pcase' clauses keyed by a qwerty character literal (e.g.
+`?d'), translated through `nas--dispatch-char' for the current
+`nas-keyboard-layout' before matching.  Unless BINDINGS already
+supplies a `_' clause, an unmatched key is re-queued unread by default."
   (declare (indent 2))
   `(defun ,name ()
      (interactive)
      (let ((key (read-key (propertize ,prompt 'face 'minibuffer-prompt))))
        (pcase key
-         ,@bindings
+         ,@(mapcar (lambda (clause)
+                     (if (eq (car clause) '_)
+                         clause
+                       `((pred (lambda (k) (eq k (nas--dispatch-char ,(car clause)))))
+                         ,@(cdr clause))))
+                   bindings)
          ,@(unless (assq '_ bindings)
              '((_ (push key unread-command-events))))))))
 
 (defmacro nas-bind (state &rest bindings)
   "Bind BINDINGS in the Nas keymap for STATE.
 STATE is a symbol: insert, visual, sequential or window.
-BINDINGS alternate between KEY (string, passed through `kbd') and COMMAND."
+BINDINGS alternate between KEY (a qwerty key string) and COMMAND.
+KEY is translated for the current `nas-keyboard-layout' via
+`nas--register-key' before being bound."
   (declare (indent 1))
-  (let ((map (intern (format "nas-%s-map" state)))
+  (let ((map-sym (intern (format "nas-%s-map" state)))
         forms)
     (while bindings
       (let ((key (pop bindings))
             (cmd (pop bindings)))
-        (push `(define-key ,map (kbd ,key) ,cmd) forms)))
+        (push `(nas--register-key ',map-sym ,key ,cmd) forms)))
     `(progn ,@(nreverse forms))))
 
 (defmacro nas-prefix (name &rest bindings)
   "Define nas-NAME-map as a prefix keymap and populate it with BINDINGS.
-BINDINGS alternate between KEY (string, passed through `kbd') and COMMAND.
-Equivalent to declaring a `defvar' sparse keymap and calling `define-key'
-for each pair — kept in one place for consistency with `nas-bind'."
+BINDINGS alternate between KEY (a qwerty key string) and COMMAND, bound
+the same way `nas-bind' does.  Equivalent to declaring a `defvar' sparse
+keymap and calling `nas--register-key' for each pair — kept in one
+place for consistency with `nas-bind'."
   (declare (indent 1))
   (let ((map-sym (intern (format "nas-%s-map" name)))
         forms)
     (while bindings
       (let ((key (pop bindings))
             (cmd (pop bindings)))
-        (push `(define-key ,map-sym (kbd ,key) ,cmd) forms)))
+        (push `(nas--register-key ',map-sym ,key ,cmd) forms)))
     `(progn
        (defvar ,map-sym (make-sparse-keymap)
          ,(format "Prefix keymap for the `%s' key in Nas visual state." name))

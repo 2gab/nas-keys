@@ -44,10 +44,16 @@
 ;; To activate on startup:
 ;;   (add-hook 'after-init-hook #'nas-mode)
 ;;
+;; Bindings are declared positionally against a US qwerty keyboard.  On a
+;; different physical layout (e.g. Brazilian ABNT2), call:
+;;   (nas-set-layout "qwerty-abnt")
+;; See `nas-layout-diagrams' for the supported layouts.
+;;
 
 ;;; Code:
 
 (require 'nas-state)
+(require 'nas-layout)
 (require 'nas-map)
 
 ;;; Customization group

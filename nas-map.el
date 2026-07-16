@@ -34,6 +34,7 @@
 ;;; Code:
 
 (require 'nas-state)
+(require 'nas-layout)
 
 ;;; Dispatch commands
 
