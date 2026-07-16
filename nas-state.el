@@ -117,7 +117,8 @@ new state immediately — no deactivation thunk required."
         (pcase state
           ('insert     'bar)
           ('visual     'box)
-          ('sequential 'hollow))))
+          ('sequential 'hollow)
+          (_           'box))))
 
 ;;; Mode line
 
@@ -137,14 +138,16 @@ In sequential state, shows the accumulated key sequence."
 (defmacro nas-define-dispatch (name prompt &rest bindings)
   "Define NAME as an interactive command that reads one key and dispatches.
 PROMPT is shown in the echo area while waiting for input.
-BINDINGS are `pcase' clauses.  An unmatched key is re-queued unread."
+BINDINGS are `pcase' clauses.  Unless BINDINGS already supplies a `_'
+clause, an unmatched key is re-queued unread by default."
   (declare (indent 2))
   `(defun ,name ()
      (interactive)
      (let ((key (read-key (propertize ,prompt 'face 'minibuffer-prompt))))
        (pcase key
          ,@bindings
-         (_ (push key unread-command-events))))))
+         ,@(unless (assq '_ bindings)
+             '((_ (push key unread-command-events))))))))
 
 (defmacro nas-bind (state &rest bindings)
   "Bind BINDINGS in the Nas keymap for STATE.

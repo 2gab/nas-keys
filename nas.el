@@ -50,6 +50,13 @@
 (require 'nas-state)
 (require 'nas-map)
 
+;;; Customization group
+
+(defgroup nas nil
+  "Nas modal editing."
+  :group 'editing
+  :prefix "nas-")
+
 ;;; Minor mode
 
 ;;;###autoload
@@ -58,6 +65,7 @@
 In visual state, keys act as navigation and editing commands.
 In insert state, keys insert text as usual."
   :global t
+  :group 'nas
   :lighter (:eval (nas--lighter))
   (if nas-mode
       (nas--enable)

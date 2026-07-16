@@ -45,7 +45,9 @@
   (?l  (kill-line 0))
   (?w  (kill-word 1))
   (?a  (when (yes-or-no-p "Erase entire buffer? ")
-         (erase-buffer))))
+         (erase-buffer)))
+  (_   (delete-char 1)
+       (push key unread-command-events)))
 
 ;;; Prefix maps
 
